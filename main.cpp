@@ -4,6 +4,7 @@
 #include <iostream>
 #include <unistd.h>
 #include "X11/Xlib.h"
+#include "extras.h"
 #include <vector>
 #include <opencv2/imgproc/imgproc.hpp>  // Gaussian Blur
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
@@ -12,9 +13,6 @@
 
 using namespace cv;
 using namespace std;
-
-timeval start, end;
-long mtime, seconds, useconds;
 
 int main()
 {
@@ -63,9 +61,9 @@ int main()
 	//namedWindow("Result",CV_WINDOW_AUTOSIZE);
 
 	while(1) {
-		gettimeofday(&start, NULL);
+		_starttimer();
 		capture >> frame;
-		gettimeofday(&end, NULL);
+		_stoptimer()
 
 		cvtColor(frame, red, CV_BGR2GRAY);
 		GaussianBlur(red, red, Size(7,7), 4, 4);
@@ -116,10 +114,7 @@ int main()
 				XFlush(d);
 			}
 
-		seconds  = end.tv_sec  - start.tv_sec;
-		useconds = end.tv_usec - start.tv_usec;
-		mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
-		cout<<"Time: "<<mtime<<" ms\n";
+		_printtimer();
 		//cout<<"cmx-_cmx: "<<cmx-_cmx<<"\t"<<"cmy-_cmy: "<<cmy-_cmy<<endl;
 
 		//imshow( "Original", frame );
