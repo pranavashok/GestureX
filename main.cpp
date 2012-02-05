@@ -92,7 +92,7 @@ int main()
 		m = moments(red, true);
 
 		_stoptimer();
-		t = getdiff();
+		t = _getdiff();
 		_printtimer();
 		_starttimer();
 		_cmx = cmx;
@@ -121,12 +121,12 @@ int main()
 		if(count>1){
 			//if(cmx - _cmx < -150 && cmx < 100) {
 			if(xvel>7)
-				pressRight(d);
+				_pressRight(d);
 		//		flag = 0;
 			//}
 		//	else if(cmy - _cmy < -150 && cmy < 100 ) {
 			else if(xvel<-7)
-				pressLeft(d);
+				_pressLeft(d);
 		//		flag = 0;
 		//	}
 		}

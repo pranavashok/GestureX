@@ -5,8 +5,8 @@
 void _starttimer(void);
 void _stoptimer(void);
 void _printtimer(void);
-int getdiff(void);
-void pressRight(Display *);
-void pressLeft(Display *);
+int _getdiff(void);
+void _pressRight(Display *);
+void _pressLeft(Display *);
 
 #endif
