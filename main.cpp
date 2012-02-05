@@ -1,9 +1,9 @@
 #include "math.h"
 #include <stdio.h>
-#include <sys/time.h>
 #include <iostream>
 #include <unistd.h>
 #include "X11/Xlib.h"
+#include "extras.h"
 #include <vector>
 #include <opencv2/imgproc/imgproc.hpp>  // Gaussian Blur
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
@@ -13,12 +13,10 @@
 using namespace cv;
 using namespace std;
 
-timeval start, end;
-long mtime, seconds, useconds;
-
 int main()
 {
-	int height,width;
+	int height,width,t,white,flag=0,count=0,xvel=0;
+	char c;
 	Display *d;
 	Window root_window;
 	Moments m;
@@ -61,51 +59,81 @@ int main()
 	vector<Mat> channels;
 	//namedWindow("Original",CV_WINDOW_AUTOSIZE);
 	//namedWindow("Result",CV_WINDOW_AUTOSIZE);
-
+	_starttimer();
 	while(1) {
-		gettimeofday(&start, NULL);
-		capture >> frame;
-		gettimeofday(&end, NULL);
 
+		capture >> frame;
+		white = 0;
 		cvtColor(frame, red, CV_BGR2GRAY);
 		GaussianBlur(red, red, Size(7,7), 4, 4);
 		split(frame, channels);
+		flag = 0;
+		count++;
 		for(int i=0; i < red.rows; i++) 
 			for(int j=0; j < red.cols; j++)
 			{
-				if((channels[2].at<uchar>(i, j) > 50+channels[1].at<uchar>(i, j)) && (channels[2].at<uchar>(i, j) > 50+channels[0].at<uchar>(i, j)))
+				if((channels[0].at<uchar>(i, j) > 40+channels[2].at<uchar>(i, j)) && (channels[0].at<uchar>(i, j) > 40+channels[1].at<uchar>(i, j))) {
 					red.at<uchar>(i, j) = 255;
+					white++;
+					if(white > 500)
+						flag = 1;
+				}
 				else
 					red.at<uchar>(i, j) = 0;
 			}
-
+		if(flag != 1){
+			for(int i=0; i < red.rows; i++) 
+				for(int j=0; j < red.cols; j++)
+					red.at<uchar>(i, j) = 0;
+			count=0;
+		}
 		threshold(red, red, BINARY_THRESHOLD, 255, THRESH_BINARY);
 		
 		m = moments(red, true);
-		
+
+		_stoptimer();
+		t = getdiff();
+		_printtimer();
+		_starttimer();
 		_cmx = cmx;
-		
+
+		//imshow( "Result", red );
+
 		if(m.m10/m.m00 >= 0 || m.m10/m.m00 <= captureWidth)
 			cmx = (m.m10/m.m00)*4;
-		else
-			continue;
 			
 		_cmy = cmy;
 		
 		if(m.m01/m.m00 >= 0 || m.m01/m.m00 <= captureHeight)
 			cmy = (m.m01/m.m00)*4;
-		else
-			continue;
 		
-		if(cmx-_cmx < -300 || cmx-_cmx > 300 || cmy-_cmy < -300 || cmy-_cmy > 300) //Skip large movements
-			continue;
+//		if(cmx-_cmx < -300 || cmx-_cmx > 300 || cmy-_cmy < -300 || cmy-_cmy > 300) //Skip large movements
+//			continue;
 			
-		if((cmx-_cmx < 3 && cmx-_cmx > -3) || (cmy-_cmy < 3 && cmy-_cmy > -3)) //Skip small movements
-			continue;
-		
+//		if((cmx-_cmx < 3 && cmx-_cmx > -3) || (cmy-_cmy < 3 && cmy-_cmy > -3)) //Skip small movements
+//			continue;
+		xvel=(_cmx-cmx)/t;
+		//cout<<"\tx: "<<xvel<<endl;
+		//cout<<"\tc: "<<count<<endl;
+		//cout<<"\ty: "<<cmy<<endl;
+		//flag++;
+		//if(flag > 5) {
+		if(count>1){
+			//if(cmx - _cmx < -150 && cmx < 100) {
+			if(xvel>7)
+				pressRight(d);
+		//		flag = 0;
+			//}
+		//	else if(cmy - _cmy < -150 && cmy < 100 ) {
+			else if(xvel<-7)
+				pressLeft(d);
+		//		flag = 0;
+		//	}
+		}
+		//}
 		//q = XQueryPointer(d, root_window, &root_return, &child_return, &curx, &cury, &win_x_return, &win_y_return, &mask_return);
 
-		if(_cmx - cmx > 0)
+		/*if(_cmx - cmx > 0)
 			for(int i = 1; i < _cmx - cmx; i++) {
 				XWarpPointer(d, None, None, 0, 0, 0, 0, 1, (cmy-_cmy)/(_cmx-cmx));
 				XFlush(d);
@@ -114,17 +142,13 @@ int main()
 			for(int i = 1; i < cmx - _cmx; i++) {
 				XWarpPointer(d, None, None, 0, 0, 0, 0, -1, (cmy-_cmy)/(cmx-_cmx));
 				XFlush(d);
-			}
-
-		seconds  = end.tv_sec  - start.tv_sec;
-		useconds = end.tv_usec - start.tv_usec;
-		mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
-		cout<<"Time: "<<mtime<<" ms\n";
-		//cout<<"cmx-_cmx: "<<cmx-_cmx<<"\t"<<"cmy-_cmy: "<<cmy-_cmy<<endl;
+			}*/
+		//_printtimer();
+		//cout<<flag<<":\tcmx: "<<cmx<<"\t\t_cmx: "<<_cmx<<"\t";
 
 		//imshow( "Original", frame );
-		//imshow( "Result", red );
-		char c = cvWaitKey(1);
+
+		c = cvWaitKey(1);
 		if( c == 27 ) break;
 	}
 
