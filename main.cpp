@@ -7,12 +7,35 @@
 #include "extras.h"
 #include <vector>
 #include <opencv2/imgproc/imgproc.hpp>  // Gaussian Blur
-#include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
+#include <opencv2/core/core.hpp>		// Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/highgui/highgui.hpp>  // OpenCV window I/O
 #define BINARY_THRESHOLD 210
+#define LOW_THRESHOLD 20
 
 using namespace cv;
 using namespace std;
+
+int edgeThresh = 1;
+int ratio = 3;
+int kernel_size = 3;
+
+Mat frame, frame_gray, result, detected_edges;
+
+void CannyThreshold(int, void*)
+{
+  /// Reduce noise with a kernel 3x3
+  	GaussianBlur(frame_gray, detected_edges, Size(3,3), 5, 5);
+	blur(detected_edges, detected_edges, Size(3,3) );
+
+  /// Canny detector
+	Canny(detected_edges, detected_edges, LOW_THRESHOLD, LOW_THRESHOLD*ratio, kernel_size );
+
+  /// Using Canny's output as a mask, we display our result
+	result = Scalar::all(0);
+
+	frame.copyTo(result, detected_edges);
+	imshow("Result", result );
+}
 
 int main()
 {
@@ -49,37 +72,28 @@ int main()
 	VideoCapture capture(0);
 	
 	if(!capture.isOpened())  // check if we succeeded
-        	return -1;
+			return -1;
 	
 	captureWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
 	captureHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
-	Mat frame;
-	Mat red;
 	
-	vector<Mat> channels;
 	//namedWindow("Original",CV_WINDOW_AUTOSIZE);
-	//namedWindow("Result",CV_WINDOW_AUTOSIZE);
+	namedWindow("Result",CV_WINDOW_AUTOSIZE);
 
 	while(1) {
 		_starttimer();
+		
 		capture >> frame;
+		
+		if( !frame.data ) return -1;
+		
 		_stoptimer();
 
-		cvtColor(frame, red, CV_BGR2GRAY);
-		GaussianBlur(red, red, Size(7,7), 4, 4);
-		split(frame, channels);
-		for(int i=0; i < red.rows; i++) 
-			for(int j=0; j < red.cols; j++)
-			{
-				if((channels[2].at<uchar>(i, j) > 50+channels[1].at<uchar>(i, j)) && (channels[2].at<uchar>(i, j) > 50+channels[0].at<uchar>(i, j)))
-					red.at<uchar>(i, j) = 255;
-				else
-					red.at<uchar>(i, j) = 0;
-			}
-
-		threshold(red, red, BINARY_THRESHOLD, 255, THRESH_BINARY);
-		
-		m = moments(red, true);
+		result.create( frame.size(), frame.type() );
+		cvtColor(frame, frame_gray, CV_BGR2GRAY );
+		CannyThreshold(0, 0);
+				
+		/*m = moments(red, true);
 		
 		_cmx = cmx;
 		
@@ -113,7 +127,7 @@ int main()
 				XWarpPointer(d, None, None, 0, 0, 0, 0, -1, (cmy-_cmy)/(cmx-_cmx));
 				XFlush(d);
 			}
-
+		*/
 		_printtimer();
 		//cout<<"cmx-_cmx: "<<cmx-_cmx<<"\t"<<"cmy-_cmy: "<<cmy-_cmy<<endl;
 
