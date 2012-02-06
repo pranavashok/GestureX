@@ -63,7 +63,7 @@ int main()
 	while(1) {
 		_starttimer();
 		capture >> frame;
-		_stoptimer()
+		_stoptimer();
 
 		cvtColor(frame, red, CV_BGR2GRAY);
 		GaussianBlur(red, red, Size(7,7), 4, 4);
