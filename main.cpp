@@ -133,7 +133,7 @@ int main()
 
 		//imshow( "Original", frame );
 		//imshow( "Result", red );
-		char c = cvWaitKey(1);
+		char c = waitKey(5);
 		if( c == 27 ) break;
 	}
 
