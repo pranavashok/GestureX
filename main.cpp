@@ -57,8 +57,8 @@ int main()
 	Mat red;
 	
 	vector<Mat> channels;
-	//namedWindow("Original",CV_WINDOW_AUTOSIZE);
-	//namedWindow("Result",CV_WINDOW_AUTOSIZE);
+	namedWindow("Original",CV_WINDOW_AUTOSIZE);
+	namedWindow("Result",CV_WINDOW_AUTOSIZE);
 
 	while(1) {
 		_starttimer();
@@ -117,9 +117,9 @@ int main()
 		_printtimer();
 		//cout<<"cmx-_cmx: "<<cmx-_cmx<<"\t"<<"cmy-_cmy: "<<cmy-_cmy<<endl;
 
-		//imshow( "Original", frame );
-		//imshow( "Result", red );
-		char c = cvWaitKey(1);
+		imshow( "Original", frame );
+		imshow( "Result", red );
+		char c = cvWaitKey(5);
 		if( c == 27 ) break;
 	}
 
