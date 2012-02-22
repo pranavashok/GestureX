@@ -17,25 +17,38 @@ using namespace std;
 
 int edgeThresh = 1;
 int ratio = 3;
-int kernel_size = 3;
+int kernel_size = 3, contouridx;
 
 Mat frame, frame_gray, result, detected_edges;
+vector<vector<Point> > contours;
+vector<Vec4i> hierarchy;
 
 void CannyThreshold(int, void*)
 {
   /// Reduce noise with a kernel 3x3
+	imshow("Before", frame_gray );
+	equalizeHist(frame_gray,frame_gray);
   	GaussianBlur(frame_gray, detected_edges, Size(3,3), 5, 5);
 	blur(detected_edges, detected_edges, Size(3,3) );
 
   /// Canny detector
 	Canny(detected_edges, detected_edges, LOW_THRESHOLD, LOW_THRESHOLD*ratio, kernel_size );
+ /// find Contour
+
+  	//findContours( detected_edges, contours, hierarchy, RETR_TREE, CHAIN_APPROX_NONE);
+ //draw contour	
+	//drawContours( frame_gray,  contours, contouridx, 240, 1, 8, hierarchy,1);
 
   /// Using Canny's output as a mask, we display our result
 	result = Scalar::all(0);
 
-	frame.copyTo(result, detected_edges);
-	imshow("Result", result );
+	frame.copyTo(result, detected_edges);	
+	imshow("Result", frame_gray );
 }
+void incre(int, void*) {
+	contouridx++;
+}
+	
 
 int main()
 {
@@ -79,7 +92,7 @@ int main()
 	
 	//namedWindow("Original",CV_WINDOW_AUTOSIZE);
 	namedWindow("Result",CV_WINDOW_AUTOSIZE);
-
+	createTrackbar("contour_idx","Result", &contouridx , 100, incre);
 	while(1) {
 		_starttimer();
 		
