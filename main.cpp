@@ -38,7 +38,8 @@ int main()
 		printf("Cannot open display\n");
 		exit(1);
    	}
- 	
+ 	namedWindow("src",CV_WINDOW_AUTOSIZE);
+	namedWindow("hsv-mask",CV_WINDOW_AUTOSIZE);
 	s = DefaultScreen(d);
 	
 	screenWidth = XDisplayWidth(d, s);
@@ -63,12 +64,12 @@ int main()
 
 	while(1) {
 		capture >> src;
-		//imshow("src", src);
 		
+		imshow("src", src);
 		cvtColor(src, hsv_image, CV_BGR2HSV);
 		//imshow("hsv-image", hsv_image);
 		inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
-		//imshow("hsv-mask", hsv_mask);
+		imshow("hsv-mask", hsv_mask);
 		
 		m = moments(hsv_mask, true);
 
@@ -109,25 +110,44 @@ int main()
 		if((cmx-_cmx < -3 && cmx-_cmx > 3) || (cmy-_cmy < -3 && cmy-_cmy > 3))
 			continue;
 		
-		if(cmx > 0.75*captureWidth)
-			if(held==0) held = _holdLeft(d);
-		else
-			if(held==1) held = _releaseLeft(d);
-		
-		if(cmx < 0.25*captureWidth)
+		if(cmx > 0.75*captureWidth) {
 			if(held==0) held = _holdRight(d);
+		}
+		else
+			if(held==1) held = _releaseRight(d);
+
+		if(cmx > 0.75*captureHeight) {
+			if(held==0) held = _holdUp(d);
+		}
+		else
+			if(held==1) held = _releaseUp(d);
+		
+		if(cmx < 0.25*captureHeight) {
+			if(held==0) held = _holdDown(d);
+		}
+		else
+			if(held==1) held = _releaseDown(d);
+
+		if(cmx < 0.25*captureWidth) {
+			if(held==0) held = _holdLeft(d);
+		}
 		else
 			if(held==1) held = _releaseLeft(d);
 		
 		if(cmx > 0.65*captureWidth && cmx < 0.75*captureWidth)
 			_tapLeft(d);
+		
+		if(cmx > 0.65*captureHeight && cmx < 0.75*captureHeight)
+			_tapUp(d);
 
 		if(cmx < 0.35*captureWidth && cmx > 0.25*captureWidth)
 			_tapRight(d);
+		if(cmx < 0.35*captureHeight && cmx > 0.25*captureHeight)
+			_tapDown(d);
 
 		held = 0;
 		
-		c = cvWaitKey(1);
+		c = cvWaitKey(10);
 		if( c == 27 ) break;
 	}
 

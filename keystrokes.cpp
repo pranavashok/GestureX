@@ -14,6 +14,20 @@ int _holdRight(Display *display) {
 	cout<<"Hold";
 	return 1;
 }
+int _holdUp(Display *display) {
+	keycode = XKeysymToKeycode(display, XK_KP_Up);
+	XTestFakeKeyEvent(display, keycode, True, 0);
+	XFlush(display);
+	cout<<"Hold";
+	return 1;
+}
+int _holdDown(Display *display) {
+	keycode = XKeysymToKeycode(display, XK_KP_Down);
+	XTestFakeKeyEvent(display, keycode, True, 0);
+	XFlush(display);
+	cout<<"Hold";
+	return 1;
+}
 int _holdLeft(Display *display) {
 	keycode = XKeysymToKeycode(display, XK_KP_Left);
 	XTestFakeKeyEvent(display, keycode, True, 0);
@@ -23,6 +37,20 @@ int _holdLeft(Display *display) {
 }
 int _releaseRight(Display *display) {
 	keycode = XKeysymToKeycode(display, XK_KP_Right);
+	XTestFakeKeyEvent(display, keycode, False, 0);
+	XFlush(display);
+	cout<<"Release";
+	return 0;
+}
+int _releaseUp(Display *display) {
+	keycode = XKeysymToKeycode(display, XK_KP_Up);
+	XTestFakeKeyEvent(display, keycode, False, 0);
+	XFlush(display);
+	cout<<"Release";
+	return 0;
+}
+int _releaseDown(Display *display) {
+	keycode = XKeysymToKeycode(display, XK_KP_Down);
 	XTestFakeKeyEvent(display, keycode, False, 0);
 	XFlush(display);
 	cout<<"Release";
@@ -42,6 +70,21 @@ void _tapRight(Display *display) {
 	XFlush(display);
 	cout<<"Tap";
 }
+void _tapUp(Display *display) {
+	keycode = XKeysymToKeycode(display, XK_KP_Up);
+	XTestFakeKeyEvent(display, keycode, True, 0);
+	XTestFakeKeyEvent(display, keycode, False, 0);
+	XFlush(display);
+	cout<<"Tap";
+}
+void _tapDown(Display *display) {
+	keycode = XKeysymToKeycode(display, XK_KP_Down);
+	XTestFakeKeyEvent(display, keycode, True, 0);
+	XTestFakeKeyEvent(display, keycode, False, 0);
+	XFlush(display);
+	cout<<"Tap";
+}
+
 void _tapLeft(Display *display) {
 	keycode = XKeysymToKeycode(display, XK_KP_Left);
 	XTestFakeKeyEvent(display, keycode, True, 0);
