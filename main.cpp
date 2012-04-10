@@ -68,7 +68,7 @@ int main()
 		cvtColor(src, hsv_image, CV_BGR2HSV);
 		//imshow("hsv-image", hsv_image);
 		inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
-		imshow("hsv-mask", hsv_mask);
+		//imshow("hsv-mask", hsv_mask);
 		
 		m = moments(hsv_mask, true);
 
@@ -109,7 +109,7 @@ int main()
 		if((cmx-_cmx < -3 && cmx-_cmx > 3) || (cmy-_cmy < -3 && cmy-_cmy > 3))
 			continue;
 		
-		if(cmx > 0.6*captureWidth)
+		if(cmx > 0.75*captureWidth)
 			if(held==0) held = _holdLeft(d);
 		else
 			if(held==1) held = _releaseLeft(d);
@@ -119,7 +119,7 @@ int main()
 		else
 			if(held==1) held = _releaseLeft(d);
 		
-		if(cmx > 0.5*captureWidth && cmx < 0.6*captureWidth)
+		if(cmx > 0.65*captureWidth && cmx < 0.75*captureWidth)
 			_tapLeft(d);
 
 		if(cmx < 0.35*captureWidth && cmx > 0.25*captureWidth)
