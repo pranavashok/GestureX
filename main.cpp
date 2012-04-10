@@ -23,7 +23,7 @@ int main()
 	Window root_return, child_return;
 	int win_x_return, win_y_return;
 	unsigned int mask_return;
-	int s, cmx, cmy, _cmx, _cmy, curx, cury, screenWidth, screenHeight, captureWidth, captureHeight, held = 0;
+	int s, cmx, cmy, _cmx, _cmy, curx, cury, screenWidth, screenHeight, captureWidth, captureHeight, pixel_count, held = 0;
 	bool q;
 	_cmx = 0;
 	_cmy = 0;
@@ -64,12 +64,27 @@ int main()
 	while(1) {
 		capture >> src;
 		//imshow("src", src);
+		
 		cvtColor(src, hsv_image, CV_BGR2HSV);
 		//imshow("hsv-image", hsv_image);
 		inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
 		imshow("hsv-mask", hsv_mask);
 		
 		m = moments(hsv_mask, true);
+
+		for(int i=0; i < hsv_mask.rows; i++) 
+			for(int j=0; j < hsv_mask.cols; j++)
+			{
+				if(hsv_mask.at<uchar>(i, j) == 255)
+					pixel_count++;
+			}
+		
+		if(pixel_count < 2000) {
+			pixel_count = 0;		
+			continue;
+		}
+		
+		pixel_count = 0;
 
 		//_stoptimer();
 		//t = _getdiff();
