@@ -23,7 +23,7 @@ int main()
 	Window root_return, child_return;
 	int win_x_return, win_y_return;
 	unsigned int mask_return;
-	int s, cmx, cmy, _cmx, _cmy, curx, cury, screenWidth, screenHeight, captureWidth, captureHeight;
+	int s, cmx, cmy, _cmx, _cmy, curx, cury, screenWidth, screenHeight, captureWidth, captureHeight, held = 0;
 	bool q;
 	_cmx = 0;
 	_cmy = 0;
@@ -46,108 +46,72 @@ int main()
 
 	XSelectInput(d, root_window, KeyReleaseMask);
 
-	VideoCapture capture(0);
+	VideoCapture capture(1);
 	
 	if(!capture.isOpened())  // check if we succeeded
         	return -1;
 	
 	captureWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
 	captureHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
-	Mat frame;
-	Mat red;
 	
-	vector<Mat> channels;
-	//namedWindow("Original",CV_WINDOW_AUTOSIZE);
-	//namedWindow("Result",CV_WINDOW_AUTOSIZE);
+	Mat src, hsv_image, hsv_mask;
+	
+	Scalar hsv_min = Scalar(0, 30, 80, 0);
+	Scalar hsv_max = Scalar(20, 150, 255, 0);
+	
 	_starttimer();
+
 	while(1) {
-
-		capture >> frame;
-		white = 0;
-		cvtColor(frame, red, CV_BGR2GRAY);
-		GaussianBlur(red, red, Size(7,7), 4, 4);
-		split(frame, channels);
-		flag = 0;
-		count++;
-		for(int i=0; i < red.rows; i++) 
-			for(int j=0; j < red.cols; j++)
-			{
-				if((channels[0].at<uchar>(i, j) > 40+channels[2].at<uchar>(i, j)) && (channels[0].at<uchar>(i, j) > 40+channels[1].at<uchar>(i, j))) {
-					red.at<uchar>(i, j) = 255;
-					white++;
-					if(white > 500)
-						flag = 1;
-				}
-				else
-					red.at<uchar>(i, j) = 0;
-			}
-		if(flag != 1){
-			for(int i=0; i < red.rows; i++) 
-				for(int j=0; j < red.cols; j++)
-					red.at<uchar>(i, j) = 0;
-			count=0;
-		}
-		threshold(red, red, BINARY_THRESHOLD, 255, THRESH_BINARY);
+		capture >> src;
+		//imshow("src", src);
+		cvtColor(src, hsv_image, CV_BGR2HSV);
+		//imshow("hsv-image", hsv_image);
+		inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
+		imshow("hsv-mask", hsv_mask);
 		
-		m = moments(red, true);
+		m = moments(hsv_mask, true);
 
-		_stoptimer();
-		t = _getdiff();
-		_printtimer();
-		_starttimer();
+		//_stoptimer();
+		//t = _getdiff();
+		//_printtimer();
+		//_starttimer();
+		
 		_cmx = cmx;
 
-		//imshow( "Result", red );
-
 		if(m.m10/m.m00 >= 0 || m.m10/m.m00 <= captureWidth)
-			cmx = (m.m10/m.m00)*4;
+			cmx = (m.m10/m.m00);
 			
 		_cmy = cmy;
 		
 		if(m.m01/m.m00 >= 0 || m.m01/m.m00 <= captureHeight)
-			cmy = (m.m01/m.m00)*4;
-		
-//		if(cmx-_cmx < -300 || cmx-_cmx > 300 || cmy-_cmy < -300 || cmy-_cmy > 300) //Skip large movements
-//			continue;
+			cmy = (m.m01/m.m00);
 			
-//		if((cmx-_cmx < 3 && cmx-_cmx > -3) || (cmy-_cmy < 3 && cmy-_cmy > -3)) //Skip small movements
-//			continue;
-		xvel=(_cmx-cmx)/t;
-		//cout<<"\tx: "<<xvel<<endl;
-		//cout<<"\tc: "<<count<<endl;
-		//cout<<"\ty: "<<cmy<<endl;
-		//flag++;
-		//if(flag > 5) {
-		if(count>1){
-			//if(cmx - _cmx < -150 && cmx < 100) {
-			if(xvel>7)
-				_pressRight(d);
-		//		flag = 0;
-			//}
-		//	else if(cmy - _cmy < -150 && cmy < 100 ) {
-			else if(xvel<-7)
-				_pressLeft(d);
-		//		flag = 0;
-		//	}
-		}
-		//}
-		//q = XQueryPointer(d, root_window, &root_return, &child_return, &curx, &cury, &win_x_return, &win_y_return, &mask_return);
-
-		/*if(_cmx - cmx > 0)
-			for(int i = 1; i < _cmx - cmx; i++) {
-				XWarpPointer(d, None, None, 0, 0, 0, 0, 1, (cmy-_cmy)/(_cmx-cmx));
-				XFlush(d);
-			}
+		cout<<cmx<<", "<<cmy<<endl;	
+		
+		if(cmx-_cmx < -300 || cmx-_cmx > 300 || cmy-_cmy < -300 || cmy-_cmy > 300)
+			continue;
+		
+		if((cmx-_cmx < -3 && cmx-_cmx > 3) || (cmy-_cmy < -3 && cmy-_cmy > 3))
+			continue;
+		
+		if(cmx > 0.6*captureWidth)
+			if(held==0) held = _holdLeft(d);
 		else
-			for(int i = 1; i < cmx - _cmx; i++) {
-				XWarpPointer(d, None, None, 0, 0, 0, 0, -1, (cmy-_cmy)/(cmx-_cmx));
-				XFlush(d);
-			}*/
-		//_printtimer();
-		//cout<<flag<<":\tcmx: "<<cmx<<"\t\t_cmx: "<<_cmx<<"\t";
+			if(held==1) held = _releaseLeft(d);
+		
+		if(cmx < 0.25*captureWidth)
+			if(held==0) held = _holdRight(d);
+		else
+			if(held==1) held = _releaseLeft(d);
+		
+		if(cmx > 0.5*captureWidth && cmx < 0.6*captureWidth)
+			_tapLeft(d);
 
-		//imshow( "Original", frame );
+		if(cmx < 0.35*captureWidth && cmx > 0.25*captureWidth)
+			_tapRight(d);
 
+		held = 0;
+		
 		c = cvWaitKey(1);
 		if( c == 27 ) break;
 	}
