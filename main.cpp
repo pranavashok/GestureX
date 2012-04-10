@@ -23,7 +23,7 @@ int main()
 	Window root_return, child_return;
 	int win_x_return, win_y_return;
 	unsigned int mask_return;
-	int s, cmx, cmy, _cmx, _cmy, curx, cury, screenWidth, screenHeight, captureWidth, captureHeight, pixel_count, held = 0;
+	int s, cmx, cmy, _cmx, _cmy, curx, cury, screenWidth, screenHeight, captureWidth, captureHeight, pixel_count, heldr = 0, heldl = 0, heldu = 0, heldd = 0;
 	bool q;
 	_cmx = 0;
 	_cmy = 0;
@@ -111,41 +111,34 @@ int main()
 			continue;
 		
 		if(cmx > 0.75*captureWidth) {
-			if(held==0) held = _holdRight(d);
+			if(heldl==0) heldl = _holdLeft(d);
 		}
-		else
-			if(held==1) held = _releaseRight(d);
-
-		if(cmx > 0.75*captureHeight) {
-			if(held==0) held = _holdUp(d);
+		else if(cmx < 0.25*captureWidth) {
+			if(heldr==0) heldr = _holdRight(d);
 		}
-		else
-			if(held==1) held = _releaseUp(d);
-		
-		if(cmx < 0.25*captureHeight) {
-			if(held==0) held = _holdDown(d);
+		else {
+			if(heldr==1) heldr = _releaseRight(d);
+			if(heldl==1) heldl = _releaseLeft(d);
+			if(cmx < 0.35*captureWidth && cmx > 0.25*captureWidth)
+				_tapRight(d);
+			if(cmx > 0.65*captureWidth && cmx < 0.75*captureWidth)
+				_tapLeft(d);
 		}
-		else
-			if(held==1) held = _releaseDown(d);
 
-		if(cmx < 0.25*captureWidth) {
-			if(held==0) held = _holdLeft(d);
+		if(cmx > 0.3*captureHeight) {
+			if(heldu==0) heldu = _holdUp(d);
+		}		
+		else if(cmx < 0.1*captureHeight) {
+			if(heldd==0) heldd = _holdDown(d);
 		}
-		else
-			if(held==1) held = _releaseLeft(d);
-		
-		if(cmx > 0.65*captureWidth && cmx < 0.75*captureWidth)
-			_tapLeft(d);
-		
-		if(cmx > 0.65*captureHeight && cmx < 0.75*captureHeight)
-			_tapUp(d);
-
-		if(cmx < 0.35*captureWidth && cmx > 0.25*captureWidth)
-			_tapRight(d);
-		if(cmx < 0.35*captureHeight && cmx > 0.25*captureHeight)
-			_tapDown(d);
-
-		held = 0;
+		else {
+			if(heldu==1) heldu = _releaseUp(d);
+			if(heldd==1) heldd = _releaseDown(d);
+			if(cmx > 0.65*captureHeight && cmx < 0.75*captureHeight)
+				_tapUp(d);
+			if(cmx < 0.35*captureHeight && cmx > 0.25*captureHeight)
+				_tapDown(d);
+		}
 		
 		c = cvWaitKey(10);
 		if( c == 27 ) break;
