@@ -80,12 +80,12 @@ int main()
 					pixel_count++;
 			}
 		
-		if(pixel_count < 2000) {
+		/*if(pixel_count < 2000) {
 			pixel_count = 0;		
 			continue;
 		}
 		
-		pixel_count = 0;
+		pixel_count = 0;*/
 
 		//_stoptimer();
 		//t = _getdiff();
