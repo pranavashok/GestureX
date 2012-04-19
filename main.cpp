@@ -1,10 +1,9 @@
-#include "math.h"
-#include <stdio.h>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
+#include <stdio.h>
 #include "X11/Xlib.h"
 #include "extras.h"
-#include <vector>
 #include <opencv2/imgproc/imgproc.hpp>  // Gaussian Blur
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/highgui/highgui.hpp>  // OpenCV window I/O
@@ -13,13 +12,10 @@
 using namespace cv;
 using namespace std;
 
-int edgeThresh = 1;
-int ratio = 3;
-int dilation_size = 0, erosion_size = 0;
-
 Mat src, hsv_image, hsv_mask;
 
 void NoiseReduce(Mat *src, Mat *dst) {
+	int dilation_size = 0, erosion_size = 0;
 	Mat element = getStructuringElement( MORPH_RECT,
 					Size( 2*erosion_size + 1, 2*erosion_size+1 ),
 					Point( erosion_size, erosion_size ) );
