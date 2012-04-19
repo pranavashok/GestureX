@@ -13,22 +13,38 @@
 using namespace cv;
 using namespace std;
 
+int edgeThresh = 1;
+int ratio = 3;
+int dilation_size = 0, erosion_size = 0;
+
+Mat src, hsv_image, hsv_mask;
+
+void NoiseReduce(Mat *src, Mat *dst) {
+	Mat element = getStructuringElement( MORPH_RECT,
+					Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+					Point( erosion_size, erosion_size ) );
+	/// Apply the erosion operation
+	erode(*src, *dst, element);
+	element = getStructuringElement( MORPH_RECT,
+					Size( 2*dilation_size + 1, 2*dilation_size+1 ),
+					Point( dilation_size, dilation_size ) );
+	/// Apply the dilation operation
+	dilate(*dst, *dst, element );
+}
+
 int main()
 {
-	int height,width,t,white,flag=0,count=0,xvel=0;
 	char c;
+	int t, flag=0, count=0;
+	int s; //Screen	
+	int cmx, cmy, _cmx, _cmy; //Center of mass, current and previous
+	int screenWidth, screenHeight, captureWidth, captureHeight, pixel_count; //Image resolutions
+	int heldr = 0, heldl = 0, heldu = 0, heldd = 0; //Keypress status
 	Display *d;
 	Window root_window;
 	Moments m;
-	Window root_return, child_return;
-	int win_x_return, win_y_return;
-	unsigned int mask_return;
-	int s, cmx, cmy, _cmx, _cmy, curx, cury, screenWidth, screenHeight, captureWidth, captureHeight, pixel_count, heldr = 0, heldl = 0, heldu = 0, heldd = 0;
-	bool q;
-	_cmx = 0;
-	_cmy = 0;
-	cmx = 0;
-	cmy = 0;
+	
+	_cmx = _cmy = cmx = cmy = 0;
 	
 	/* open connection with the server */
 	d = XOpenDisplay(NULL);
@@ -38,8 +54,10 @@ int main()
 		printf("Cannot open display\n");
 		exit(1);
    	}
- 	namedWindow("src",CV_WINDOW_AUTOSIZE);
-	namedWindow("hsv-mask",CV_WINDOW_AUTOSIZE);
+   	
+ 	//namedWindow("src",CV_WINDOW_AUTOSIZE);
+	//namedWindow("hsv-mask",CV_WINDOW_AUTOSIZE);
+	
 	s = DefaultScreen(d);
 	
 	screenWidth = XDisplayWidth(d, s);
@@ -47,27 +65,24 @@ int main()
 
 	XSelectInput(d, root_window, KeyReleaseMask);
 
-	VideoCapture capture(1);
+	VideoCapture capture(1); //Default(0) or External(1) camera
 	
-	if(!capture.isOpened())  // check if we succeeded
-        	return -1;
+	if(!capture.isOpened())
+		return -1;
 	
 	captureWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
 	captureHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
-	
-	Mat src, hsv_image, hsv_mask;
-	
+		
 	Scalar hsv_min = Scalar(0, 30, 80, 0);
 	Scalar hsv_max = Scalar(20, 150, 255, 0);
 	
-	_starttimer();
-
 	while(1) {
 		capture >> src;
-		
+		NoiseReduce(&src, &src);
 		imshow("src", src);
+		
 		cvtColor(src, hsv_image, CV_BGR2HSV);
-		//imshow("hsv-image", hsv_image);
+		
 		inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
 		imshow("hsv-mask", hsv_mask);
 		
@@ -80,12 +95,12 @@ int main()
 					pixel_count++;
 			}
 		
-		/*if(pixel_count < 2000) {
+		if(pixel_count < 3000) {
 			pixel_count = 0;		
 			continue;
 		}
 		
-		pixel_count = 0;*/
+		pixel_count = 0;
 
 		//_stoptimer();
 		//t = _getdiff();
