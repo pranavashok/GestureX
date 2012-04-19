@@ -13,32 +13,27 @@ using namespace cv;
 using namespace std;
 
 Mat src, hsv_image, hsv_mask;
+float lR, rR, uR, dR;
+Scalar hsv_min, hsv_max;
+Moments m;
+int cmx, cmy, _cmx, _cmy; //Center of mass, current and previous
+int screenWidth, screenHeight, captureWidth, captureHeight, pixel_count; //Image resolutions
 
-void NoiseReduce(Mat *src, Mat *dst) {
-	int dilation_size = 0, erosion_size = 0;
-	Mat element = getStructuringElement( MORPH_RECT,
-					Size( 2*erosion_size + 1, 2*erosion_size+1 ),
-					Point( erosion_size, erosion_size ) );
-	/// Apply the erosion operation
-	erode(*src, *dst, element);
-	element = getStructuringElement( MORPH_RECT,
-					Size( 2*dilation_size + 1, 2*dilation_size+1 ),
-					Point( dilation_size, dilation_size ) );
-	/// Apply the dilation operation
-	dilate(*dst, *dst, element );
-}
+void _noiseReduce(Mat *, Mat *);
+int _getPixelCount(Mat);
+void _setLeft();
+void _setRight();
+void _setUp();
+void _setDown();
 
 int main()
 {
 	char c;
 	int t, flag=0, count=0;
 	int s; //Screen	
-	int cmx, cmy, _cmx, _cmy; //Center of mass, current and previous
-	int screenWidth, screenHeight, captureWidth, captureHeight, pixel_count; //Image resolutions
 	int heldr = 0, heldl = 0, heldu = 0, heldd = 0; //Keypress status
 	Display *d;
 	Window root_window;
-	Moments m;
 	
 	_cmx = _cmy = cmx = cmy = 0;
 	
@@ -59,8 +54,6 @@ int main()
 	screenWidth = XDisplayWidth(d, s);
 	screenHeight = XDisplayHeight(d, s);
 
-	XSelectInput(d, root_window, KeyReleaseMask);
-
 	VideoCapture capture(1); //Default(0) or External(1) camera
 	
 	if(!capture.isOpened())
@@ -69,13 +62,53 @@ int main()
 	captureWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
 	captureHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
 		
-	Scalar hsv_min = Scalar(0, 30, 80, 0);
-	Scalar hsv_max = Scalar(20, 150, 255, 0);
+	hsv_min = Scalar(0, 30, 80, 0);
+	hsv_max = Scalar(20, 150, 255, 0);
 	
-	while(1) {
+	char wait[1];
+	
+	for(int i = 0; i!=-1; i) {
 		capture >> src;
-		NoiseReduce(&src, &src);
+		_noiseReduce(&src, &src);
 		imshow("src", src);
+		
+		if(i == 0) {
+			cout<<"Calibration\n===============\n\n";
+			cout<<"Gesture for left keypress\n";
+			while(1) {
+				capture>>src;
+				imshow("src",src);
+				c = cvWaitKey(20);
+				if( c == ' ' ) break;
+			}
+			_setLeft(); 
+			cout<<"Gesture for right keypress\n"; 
+			while(1) {
+				capture>>src;
+				imshow("src",src);
+				c = cvWaitKey(20);
+				if( c == ' ' ) break;
+			}
+			_setRight(); 
+			cout<<"Gesture for up keypress\n";
+			while(1) {
+				capture>>src;
+				imshow("src",src);
+				c = cvWaitKey(20);
+				if( c == ' ' ) break;
+			}
+			_setUp();
+			cout<<"Gesture for down keypress\n";
+			while(1) {
+				capture>>src;
+				imshow("src",src);
+				c = cvWaitKey(20);
+				if( c == ' ' ) break;
+			}
+			_setDown();
+			cout<<"("<<lR<<", "<<rR<<", "<<uR<<", "<<dR<<")\n";
+			i++;
+		}
 		
 		cvtColor(src, hsv_image, CV_BGR2HSV);
 		
@@ -84,12 +117,7 @@ int main()
 		
 		m = moments(hsv_mask, true);
 
-		for(int i=0; i < hsv_mask.rows; i++) 
-			for(int j=0; j < hsv_mask.cols; j++)
-			{
-				if(hsv_mask.at<uchar>(i, j) == 255)
-					pixel_count++;
-			}
+		pixel_count = _getPixelCount(hsv_mask);
 		
 		if(pixel_count < 3000) {
 			pixel_count = 0;		
@@ -97,23 +125,18 @@ int main()
 		}
 		
 		pixel_count = 0;
-
-		//_stoptimer();
-		//t = _getdiff();
-		//_printtimer();
-		//_starttimer();
 		
-		_cmx = cmx;
+		_cmx = cmx; //Store previous CM(x) in _cmx
 
 		if(m.m10/m.m00 >= 0 || m.m10/m.m00 <= captureWidth)
 			cmx = (m.m10/m.m00);
 			
-		_cmy = cmy;
+		_cmy = cmy; //Store previous CM(y) in _cmy
 		
 		if(m.m01/m.m00 >= 0 || m.m01/m.m00 <= captureHeight)
 			cmy = (m.m01/m.m00);
 			
-		cout<<cmx<<", "<<cmy<<endl;	
+		//cout<<cmx<<", "<<cmy<<endl;	
 		
 		if(cmx-_cmx < -300 || cmx-_cmx > 300 || cmy-_cmy < -300 || cmy-_cmy > 300)
 			continue;
@@ -121,33 +144,33 @@ int main()
 		if((cmx-_cmx < -3 && cmx-_cmx > 3) || (cmy-_cmy < -3 && cmy-_cmy > 3))
 			continue;
 		
-		if(cmx > 0.75*captureWidth) {
+		if(cmx > (lR+0.1)*captureWidth) { //0.75
 			if(heldl==0) heldl = _holdLeft(d);
 		}
-		else if(cmx < 0.25*captureWidth) {
+		else if(cmx < (rR-0.1)*captureWidth) { //0.25
 			if(heldr==0) heldr = _holdRight(d);
 		}
 		else {
 			if(heldr==1) heldr = _releaseRight(d);
 			if(heldl==1) heldl = _releaseLeft(d);
-			if(cmx < 0.35*captureWidth && cmx > 0.25*captureWidth)
+			if(cmx < (rR+0.1)*captureWidth && cmx > (rR-0.1)*captureWidth)
 				_tapRight(d);
-			if(cmx > 0.65*captureWidth && cmx < 0.75*captureWidth)
+			if(cmx > (lR-0.1)*captureWidth && cmx < (lR+0.1)*captureWidth)
 				_tapLeft(d);
 		}
 
-		if(cmx > 0.3*captureHeight) {
+		if(cmy < uR*captureHeight) { //0.3
 			if(heldu==0) heldu = _holdUp(d);
 		}		
-		else if(cmx < 0.1*captureHeight) {
+		else if(cmy > dR*captureHeight) {
 			if(heldd==0) heldd = _holdDown(d);
 		}
 		else {
 			if(heldu==1) heldu = _releaseUp(d);
 			if(heldd==1) heldd = _releaseDown(d);
-			if(cmx > 0.65*captureHeight && cmx < 0.75*captureHeight)
+			if(cmy > uR*captureHeight && cmy < (uR+0.1)*captureHeight)
 				_tapUp(d);
-			if(cmx < 0.35*captureHeight && cmx > 0.25*captureHeight)
+			if(cmy > (dR-0.1)*captureHeight && cmy < dR*captureHeight)
 				_tapDown(d);
 		}
 		
@@ -155,5 +178,99 @@ int main()
 		if( c == 27 ) break;
 	}
 
-	return 0;	
+	return 0;
+}
+
+void _noiseReduce(Mat *src, Mat *dst) {
+	int dilation_size = 0, erosion_size = 0;
+	Mat element = getStructuringElement( MORPH_RECT,
+					Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+					Point( erosion_size, erosion_size ) );
+	/// Apply the erosion operation
+	erode(*src, *dst, element);
+	element = getStructuringElement( MORPH_RECT,
+					Size( 2*dilation_size + 1, 2*dilation_size+1 ),
+					Point( dilation_size, dilation_size ) );
+	/// Apply the dilation operation
+	dilate(*dst, *dst, element );
+}
+
+int _getPixelCount(Mat img) {
+	int pixels = 0;
+	for(int i=0; i < img.rows; i++) 
+	for(int j=0; j < img.cols; j++)
+	{
+		if(img.at<uchar>(i, j) == 255)
+			pixels++;
+	}
+	return pixels;
+}
+
+void _setLeft() {
+	cvtColor(src, hsv_image, CV_BGR2HSV);
+		
+	inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
+	
+	m = moments(hsv_mask, true);
+
+	pixel_count = _getPixelCount(hsv_mask);
+	
+	if(pixel_count > 3000) {
+		if(m.m10/m.m00 >= 0 || m.m10/m.m00 <= captureWidth)
+			cmx = (m.m10/m.m00);
+		lR = float(cmx)/float(captureWidth);
+	}
+	else
+		lR = 0.75;
+}
+void _setRight() {
+	cvtColor(src, hsv_image, CV_BGR2HSV);
+		
+	inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
+	
+	m = moments(hsv_mask, true);
+
+	pixel_count = _getPixelCount(hsv_mask);
+	
+	if(pixel_count > 3000) {
+		if(m.m10/m.m00 >= 0 || m.m10/m.m00 <= captureWidth)
+			cmx = (m.m10/m.m00);
+		rR = float(cmx)/float(captureWidth);
+	}
+	else
+		rR = 0.25;
+}
+void _setUp() {
+	cvtColor(src, hsv_image, CV_BGR2HSV);
+		
+	inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
+	
+	m = moments(hsv_mask, true);
+
+	pixel_count = _getPixelCount(hsv_mask);
+	
+	if(pixel_count > 3000) {
+		if(m.m01/m.m00 >= 0 || m.m01/m.m00 <= captureHeight)
+			cmy = (m.m01/m.m00);
+		uR = float(cmy)/float(captureHeight);
+	}
+	else
+		uR = 0.5;
+}
+void _setDown() {
+	cvtColor(src, hsv_image, CV_BGR2HSV);
+		
+	inRange(hsv_image, hsv_min, hsv_max, hsv_mask);
+	
+	m = moments(hsv_mask, true);
+
+	pixel_count = _getPixelCount(hsv_mask);
+	
+	if(pixel_count > 3000) {
+		if(m.m01/m.m00 >= 0 || m.m01/m.m00 <= captureHeight)
+			cmy = (m.m01/m.m00);
+		dR = float(cmy)/float(captureHeight);
+	}
+	else
+		dR = 0.75;
 }

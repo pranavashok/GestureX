@@ -3,6 +3,14 @@
 #include <sys/time.h>
 #include "extras.h"
 
+/* 	Usage: 		*/
+/*
+	_stoptimer();
+	t = _getdiff();
+	_printtimer();
+	_starttimer();
+*/
+
 timeval start, end;
 long mtime, seconds, useconds;
 
