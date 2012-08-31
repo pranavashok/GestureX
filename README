@@ -1,0 +1,62 @@
+Description
+------------
+GestureX can simulate the following keystrokes based on the centre of mass of any skin color detected by the cam.
+1. Hold Left, Up, Right, Down
+2. Release Left, Up, Right, Down
+3. Tap Left, Up, Right, Down
+
+
+Using GestureX
+--------------
+
+Edit line 57 of main.cpp
+
+VideoCapture capture(1); //0 for internal camera, 1 for external camera
+
+Run make
+./main
+
+Pre-requisites
+---------------
+
+G++, OpenCV 2.3.1 or similar
+
+How to install OpenCV 2.3.1 in Ubuntu 11.10 Oneiric Ocelot
+
+1. Remove any installed versions of ffmpeg and x264
+  sudo apt-get remove ffmpeg x264 libx264-dev
+
+2. Get all the dependencies for x264 and ffmpeg
+	sudo apt-get install build-essential checkinstall git cmake libfaac-dev libjack-jackd2-dev libmp3lame-dev libopencore-amrnb-dev libopencore-amrwb-dev libsdl1.2-dev libtheora-dev libva-dev libvdpau-dev libvorbis-dev libx11-dev libxfixes-dev libxvidcore-dev texi2html yasm zlib1g-dev
+	sudo apt-get install libjpeg62 libjpeg62-dev libjpeg-progs libavcodec53 libavformat53
+	
+4. Download and install x264 – download any recent stable snapshot from ftp://ftp.videolan.org/pub/videolan/x264/snapshots, extract it and compile
+	./configure --enable-static 
+	make
+	sudo make install
+	
+5. Download and install ffmpeg – download any recent stable snapshot from http://ffmpeg.org/download.html (I used ffmpeg-0.10.tar.gz) and extract it to a folder.
+	./configure --enable-gpl --enable-libfaac --enable-libmp3lame --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libtheora --enable-libvorbis --enable-libx264 --enable-libxvid --enable-nonfree --enable-postproc --enable-version3 --enable-x11grab
+	make
+	sudo make install
+
+6. Install qt4 development tools
+	sudo apt-get install qt4-dev-tools
+
+7. Download and install v4l – download any recent stable snapshot from http://www.linuxtv.org/downloads/v4l-utils/ (I used v4l-utils-0.8.5.tar.bz2) and extract it to a folder.
+	make
+	sudo make install
+
+8. Download and install OpenCV – download OpenCV 2.3.1 from  http://sourceforge.net/projects/opencvlibrary/files/ and extract it to a folder. Enter the folder and
+	mkdir release
+	cd release
+	cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D BUILD_PYTHON_SUPPORT=ON -D BUILD_EXAMPLES=ON ..
+	make
+	sudo make install
+
+9. Configure Linux – add the following line to your .bashrc in order to tell linux where the shared libraries for OpenCV are located without having to enter it everytime you start a new terminal:
+	export LD_LIBRARY_PATH=/usr/local/lib
+
+using any text editor add the following lines to the end of your /etc/bash.bashrc file
+	PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
+	export PKG_CONFIG_PATH
