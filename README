@@ -1,5 +1,6 @@
 Description
 ------------
+
 GestureX can simulate the following keystrokes based on the centre of mass of any skin color detected by the cam.
 1. Hold Left, Up, Right, Down
 2. Release Left, Up, Right, Down
